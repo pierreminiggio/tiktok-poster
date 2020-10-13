@@ -1,13 +1,16 @@
+const { resolve } = require('path')
 const puppeteer = require('puppeteer')
 
 /**
  * @param {string} facebookLogin
  * @param {string} facebookPassword
+ * @param {string} videoPath
+ * @param {string} legend
  * @param {boolean} headless
  * 
  * @returns {Promise}
  */
-function post(facebookLogin, facebookPassword, headless = true) {
+function post(facebookLogin, facebookPassword, videoPath, legend, headless = true) {
     return new Promise(async () => {
         const browser = await puppeteer.launch({ headless: headless })
         const page = await browser.newPage()
@@ -21,7 +24,6 @@ function post(facebookLogin, facebookPassword, headless = true) {
             /** @type {import('puppeteer').Page} foundFacebookLogin */
             const facebookLoginPage = await findFacebookLogin(browser);
             if (facebookLoginPage) {
-
                 await facebookLoginPage.reload()
                 await facebookLoginPage.evaluate((facebookLogin, facebookPassword) => {
                     const body = document.body
@@ -35,16 +37,37 @@ function post(facebookLogin, facebookPassword, headless = true) {
                 if (loggedInPage) {
                     if (! hasLoggedIn) {
                         hasLoggedIn = true
-                        
                         await page.goto('https://www.tiktok.com/upload/?lang=en')
+                        const videoInputSelector = 'input[name="upload-btn"]'
+                        await page.waitForSelector(videoInputSelector)
+                        const inputFile = await page.$(videoInputSelector)
+                        await inputFile.uploadFile(videoPath)
+                        
+                        const legendInputSelector = '.DraftEditor-editorContainer>div'
+                        await page.waitForSelector(legendInputSelector)
+                        await page.evaluate((legendInputSelector) => {
+                            document.body.querySelector(legendInputSelector).focus()
+                        }, legendInputSelector)
+
+
+                        await page.type(legendInputSelector, legend)
+
+                        setTimeout(async () => {
+                            const postButtonSelector = 'button[type="button"]:nth-of-type(2)'
+                            await page.waitForSelector(postButtonSelector)
+                            
+                            await page.click(postButtonSelector)
+                            setTimeout(() => {
+                                browser.close()
+                                resolve()
+                            }, 3000)
+                    }, 3000)
                     }
                 }
             }
         })
 
         await page.click(facebookButtonSelector)
-
-        //browser.close()
     })
 }
 
