@@ -10,7 +10,7 @@ const puppeteer = require('puppeteer')
  * @returns {Promise}
  */
 function post(facebookLogin, facebookPassword, videoPath, legend, headless = true) {
-    return new Promise(async () => {
+    return new Promise(async (resolve) => {
         const browser = await puppeteer.launch({ headless: headless })
         const page = await browser.newPage()
         await page.goto('https://www.tiktok.com/login')
