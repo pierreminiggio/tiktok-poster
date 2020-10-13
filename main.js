@@ -1,4 +1,3 @@
-const { resolve } = require('path')
 const puppeteer = require('puppeteer')
 
 /**
@@ -49,8 +48,12 @@ function post(facebookLogin, facebookPassword, videoPath, legend, headless = tru
                             document.body.querySelector(legendInputSelector).focus()
                         }, legendInputSelector)
 
+                        await asyncForEach(Array.from(legend), async (char) => {
+                            await sleep(1000)
+                            await page.type(legendInputSelector, char)
+                        })
 
-                        await page.type(legendInputSelector, legend)
+                        await page.type(legendInputSelector, ' ')
 
                         setTimeout(async () => {
                             const postButtonSelector = 'button[type="button"]:nth-of-type(2)'
@@ -61,7 +64,7 @@ function post(facebookLogin, facebookPassword, videoPath, legend, headless = tru
                                 browser.close()
                                 resolve()
                             }, 3000)
-                    }, 3000)
+                        }, 3000)
                     }
                 }
             }
@@ -104,6 +107,21 @@ async function findPageIncludes(browser, pageTitleIncludedText) {
         }
     }
     return null;
+}
+
+async function asyncForEach(array, callback) {
+    for (let index = 0; index < array.length; index++) {
+        await callback(array[index], index, array);
+    }
+}
+
+/**
+ * @param {number} ms 
+ */
+function sleep(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms)
+    })
 }
 
 module.exports = post
