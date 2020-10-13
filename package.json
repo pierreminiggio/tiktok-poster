@@ -1,0 +1,24 @@
+{
+  "name": "@pierreminiggio/tiktok-poster",
+  "version": "1.0.0",
+  "description": "Puppeteer Proxied Browser Creator",
+  "main": "main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pierreminiggio/tiktok-poster.git"
+  },
+  "author": "Pierre MINIGGIO",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pierreminiggio/tiktok-poster/issues"
+  },
+  "homepage": "https://github.com/pierreminiggio/tiktok-poster#readme",
+  "dependencies": {
+    "node": "^12.6.0",
+    "puppeteer": "^1.18.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
