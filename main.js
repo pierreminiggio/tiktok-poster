@@ -16,7 +16,7 @@ function post(facebookLogin, facebookPassword, videoPath, legend, show = true) {
             headless: ! show,
             args: [
                 '--window-size=800,500',
-                //'--window-position=0,-600'
+                '--window-position=0,-600'
             ]
         })
         console.log('Launched')
