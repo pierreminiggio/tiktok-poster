@@ -1,5 +1,8 @@
 # tiktok-poster
 
+Prérequis :
+Ceux de Puppeteer : https://github.com/puppeteer/puppeteer
+
 Installation :
 ```
 npm install pierreminiggio/tiktok-poster
