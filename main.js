@@ -21,7 +21,7 @@ function post(facebookLogin, facebookPassword, videoPath, legend, show = true) {
         })
         console.log('Launched')
         let posterTimeout = true
-        setTimeout(() => {
+        setTimeout(async () => {
             if (posterTimeout) {
                 await browser.close()
                 console.log('Timed out')
