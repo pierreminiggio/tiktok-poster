@@ -27,7 +27,7 @@ function post(facebookLogin, facebookPassword, videoPath, legend, show = true) {
                 console.log('Timed out')
                 rejects('timed out')
             }
-        }, 60000)
+        }, 30000)
 
         console.log('Go to login page')
         const page = await browser.newPage()
@@ -107,8 +107,8 @@ function post(facebookLogin, facebookPassword, videoPath, legend, show = true) {
                             
                             await page.click(postButtonSelector)
                             console.log('Clicked !')
-                            setTimeout(() => {
-                                browser.close()
+                            setTimeout(async () => {
+                                await browser.close()
                                 console.log('Likely Posted !')
                                 resolve()
                             }, 3000)
