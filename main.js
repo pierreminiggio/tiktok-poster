@@ -49,12 +49,20 @@ function post(facebookLogin, facebookPassword, videoPath, legend, show = true) {
                 console.log('Fb login page reloading...')
                 await facebookLoginPage.reload()
                 console.log('Fb login page reloaded. Loggin-in ...')
-                await facebookLoginPage.evaluate((facebookLogin, facebookPassword) => {
-                    const body = document.body
-                    body.querySelector('#email').value = facebookLogin
-                    body.querySelector('#pass').value = facebookPassword
-                    body.querySelector('input[name="login"]').click()
-                }, facebookLogin, facebookPassword)
+                try {
+                    await facebookLoginPage.evaluate((facebookLogin, facebookPassword) => {
+                        const body = document.body
+                        body.querySelector('#email').value = facebookLogin
+                        body.querySelector('#pass').value = facebookPassword
+                        body.querySelector('input[name="login"]').click()
+                    }, facebookLogin, facebookPassword)
+                } catch (loginError) {
+                    await browser.close()
+                    rejects('Facebook Login Failed')
+
+                    return
+                }
+                
                 console.log('Likely logged in !')
             } else {
                 /** @type {import('puppeteer').Page} loggedInPage */
