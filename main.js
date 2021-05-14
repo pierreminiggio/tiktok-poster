@@ -16,25 +16,25 @@ function post(facebookLogin, facebookPassword, videoPath, legend, show = true) {
             headless: ! show,
             args: [
                 '--window-size=800,500',
-                '--window-position=0,-600'
+                //'--window-position=0,-600'
             ]
         })
         console.log('Launched')
         let posterTimeout = true
         setTimeout(() => {
             if (posterTimeout) {
-                browser.close()
+                await browser.close()
                 console.log('Timed out')
                 rejects('timed out')
             }
-        }, 30000)
+        }, 60000)
 
         console.log('Go to login page')
         const page = await browser.newPage()
         await page.goto('https://www.tiktok.com/login')
         console.log('Waiting for Fb Login selector...')
 
-        const facebookButtonSelector = '.channel-item-wrapper-2gBWB:nth-of-type(2)>.channel-name-2qzLW'
+        const facebookButtonSelector = '.channel-item-wrapper-2gBWB+.channel-item-wrapper-2gBWB+.channel-item-wrapper-2gBWB .channel-name-2qzLW'
         await page.waitForSelector(facebookButtonSelector)
 
         console.log('Waited !')
@@ -129,7 +129,13 @@ async function findFacebookLogin(browser) {
  * @returns {?import('puppeteer').Page}
  */
 async function findLoggedInPage(browser) {
-    return await findPageIncludes(browser, 'https://www.tiktok.com/foryou?loginType=facebook&lang=en')
+    return await findPageIncludes(
+        browser,
+        'https://www.tiktok.com/foryou?loginType=facebook&lang=en'
+    ) || await findPageIncludes(
+        browser,
+        'https://www.tiktok.com/foryou?lang=en'
+    )
 }
 
 /**
