@@ -46,6 +46,9 @@ function post(
 
         sendLog('Go to login page')
         const page = await browser.newPage()
+        await page.evaluateOnNewDocument(() => {
+            delete navigator.__proto__.webdriver;
+        });
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36 OPR/77.0.4054.60');
         await page.goto('https://www.tiktok.com/login')
 
@@ -121,9 +124,21 @@ function post(
                             const postButtonSelector = 'button[type="button"]:nth-of-type(2)'
                             await page.waitForSelector(postButtonSelector)
                             sendLog('Waited ! Clicking post button...')
-                            
+
                             await page.click(postButtonSelector)
                             sendLog('Clicked !')
+
+                            await page.waitForTimeout(500)
+                            const itWasNotPostButtonItWasFuckingCookies = await page.evaluate(postButtonSelector => {
+                                return document.querySelector(postButtonSelector) !== null
+                            }, postButtonSelector)
+
+                            if (itWasNotPostButtonItWasFuckingCookies) {
+                                sendLog('Fuck cookies')
+                                await page.click(postButtonSelector)
+                                sendLog('Clicked !')
+                            }
+
                             setTimeout(async () => {
                                 await page.waitForTimeout(10000)
 
