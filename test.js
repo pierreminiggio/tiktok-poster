@@ -6,7 +6,7 @@ fs.readFile('./ids.json', 'utf-8', (err, data) => {
         ids.login,
         ids.password,
         __dirname + '/test.mp4',
-        'Hihihi18 #dev #blabla',
+        'Ceci est un test',
         false,
         (toLog) => {}
     ).then(console.log)

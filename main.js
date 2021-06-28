@@ -23,8 +23,9 @@ function post(
     videoPath,
     legend,
     show = false,
-    sendLog = (loLog) => {}
+    sendLog = (toLog) => {}
 ) {
+    const hasDebugFunction = isFunctionEmpty(sendLog)
     return new Promise(async (resolve, rejects) => {
         sendLog('Launch !')
         const browser = await puppeteer.launch({
@@ -119,54 +120,71 @@ function post(
                         await page.type(legendInputSelector, ' ')
                         sendLog('Typed !')
 
-                        setTimeout(async () => {
-                            sendLog('Waiting for post button...')
-                            const postButtonSelector = 'button[type="button"]:nth-of-type(2)'
-                            await page.waitForSelector(postButtonSelector)
-                            sendLog('Waited ! Clicking post button...')
+                        await page.waitForTimeout(3000)
 
-                            await page.click(postButtonSelector)
-                            sendLog('Clicked !')
+                        sendLog('Checking if Cookies showed up...')
 
-                            await page.waitForTimeout(500)
-                            const itWasNotPostButtonItWasFuckingCookies = await page.evaluate(postButtonSelector => {
-                                return document.querySelector(postButtonSelector) !== null
-                            }, postButtonSelector)
+                        const cookiesButtonSelector = 'a[href^="https://www.tiktok.com/legal/cookie-settings"]+button'
+                        const hasCookiesPopupShownUp = await page.evaluate(cookiesButtonSelector => {
+                            return document.querySelector(cookiesButtonSelector) !== null
+                        }, cookiesButtonSelector)
 
-                            if (itWasNotPostButtonItWasFuckingCookies) {
-                                sendLog('Fuck cookies')
-                                await page.click(postButtonSelector)
-                                sendLog('Clicked !')
+                        if (hasCookiesPopupShownUp) {
+                            sendLog('They showed up !')
+                            await page.click(cookiesButtonSelector)
+                            sendLog('Accepted Cookies !')
+                        }
+
+                        sendLog('Waiting for post button...')
+                        const postButtonSelector = 'button[type="button"]:nth-of-type(2)'
+                        await page.waitForSelector(postButtonSelector)
+                        sendLog('Waited ! Clicking post button...')
+                        if (hasDebugFunction) {
+                            await page.screenshot({path: '1before-clicking.png'})
+                        }
+
+
+                        await page.click(postButtonSelector)
+                        sendLog('Clicked !')
+                        if (hasDebugFunction) {
+                            await page.screenshot({path: '2after-clicking.png'})
+                        }
+
+
+                        await page.waitForTimeout(3000)
+                        await page.waitForTimeout(10000)
+                        if (hasDebugFunction) {
+                            await page.screenshot({path: '3after-clicking-after-wait.png'})
+                        }
+
+
+                        const goToProfileButton = '.modal-btn+.modal-btn'
+                        try {
+                            await page.waitForSelector(goToProfileButton)
+                        } catch (error) {
+                            if (hasDebugFunction) {
+                                await page.screenshot({path: '7fail.png'})
                             }
 
-                            setTimeout(async () => {
-                                await page.waitForTimeout(10000)
+                            sendLog(await page.evaluate(() => document.head.outerHTML + document.body.outerHTML))
+                            await browser.close()
+                            rejects('Profile button not found after posting : ' + error.message)
 
-                                const goToProfileButton = '.modal-btn+.modal-btn'
-                                try {
-                                    await page.waitForSelector(goToProfileButton)
-                                } catch (error) {
-                                    sendLog(await page.evaluate(() => document.head.outerHTML + document.body.outerHTML))
-                                    await browser.close()
-                                    rejects('Profile button not found after posting : ' + error.message)
+                            return
+                        }
 
-                                    return
-                                }
+                        await page.click(goToProfileButton)
 
-                                await page.click(goToProfileButton)
+                        const lastVideoSelector = '.video-feed-item-wrapper'
+                        await page.waitForSelector(lastVideoSelector)
+                        const tiktokUrl = await page.evaluate(lastVideoSelector => {
+                            return document.querySelector(lastVideoSelector)?.href
+                        }, lastVideoSelector)
+                        sendLog(tiktokUrl)
 
-                                const lastVideoSelector = '.video-feed-item-wrapper'
-                                await page.waitForSelector(lastVideoSelector)
-                                const tiktokUrl = await page.evaluate(lastVideoSelector => {
-                                    return document.querySelector(lastVideoSelector)?.href
-                                }, lastVideoSelector)
-                                sendLog(tiktokUrl)
-
-                                sendLog('Likely Posted !')
-                                await browser.close()
-                                resolve(tiktokUrl)
-                            }, 3000)
-                        }, 3000)
+                        sendLog('Likely Posted !')
+                        await browser.close()
+                        resolve(tiktokUrl)
                     }
                 }
             }
@@ -247,6 +265,14 @@ function sleep(ms) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms)
     })
+}
+
+/**
+ * @param {Function} f
+ * @returns {boolean}
+ */
+function isFunctionEmpty(f) {
+    return f.toString() === '(toLog) => {}'
 }
 
 module.exports = post
