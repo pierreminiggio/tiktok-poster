@@ -25,7 +25,7 @@ function post(
     show = false,
     sendLog = (toLog) => {}
 ) {
-    const hasDebugFunction = isFunctionEmpty(sendLog)
+    const hasDebugFunction = ! isFunctionEmpty(sendLog)
     return new Promise(async (resolve, rejects) => {
         sendLog('Launch !')
         const browser = await puppeteer.launch({
