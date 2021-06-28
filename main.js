@@ -31,7 +31,7 @@ function post(
             headless: ! show,
             args: [
                 '--window-size=1000,800',
-                //'--window-position=0,-600'
+                '--no-sandbox'
             ]
         })
         sendLog('Launched')
