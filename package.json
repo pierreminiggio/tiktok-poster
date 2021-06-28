@@ -15,7 +15,9 @@
   "homepage": "https://github.com/pierreminiggio/tiktok-poster#readme",
   "dependencies": {
     "node": "^12.6.0",
-    "puppeteer": "^10.0.0"
+    "puppeteer": "^10.0.0",
+    "puppeteer-extra": "^3.1.18",
+    "puppeteer-extra-plugin-stealth": "^2.7.8"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
