@@ -1,17 +1,30 @@
 const puppeteer = require('puppeteer')
 
 /**
+ * @typedef {Function} LogFunction
+ * @property {string} toLog
+ */
+
+/**
  * @param {string} facebookLogin
  * @param {string} facebookPassword
  * @param {string} videoPath
  * @param {string} legend
  * @param {boolean} show
+ * @param {LogFunction} sendLog
  * 
- * @returns {Promise}
+ * @returns {Promise<string>}
  */
-function post(facebookLogin, facebookPassword, videoPath, legend, show = true) {
+function post(
+    facebookLogin,
+    facebookPassword,
+    videoPath,
+    legend,
+    show = false,
+    sendLog = (loLog) => {}
+) {
     return new Promise(async (resolve, rejects) => {
-        console.log('Launch !')
+        sendLog('Launch !')
         const browser = await puppeteer.launch({
             headless: ! show,
             args: [
@@ -19,36 +32,36 @@ function post(facebookLogin, facebookPassword, videoPath, legend, show = true) {
                 //'--window-position=0,-600'
             ]
         })
-        console.log('Launched')
+        sendLog('Launched')
         let posterTimeout = true
         setTimeout(async () => {
             if (posterTimeout) {
                 await browser.close()
-                console.log('Timed out')
+                sendLog('Timed out')
                 rejects('timed out')
             }
         }, 30000)
 
-        console.log('Go to login page')
+        sendLog('Go to login page')
         const page = await browser.newPage()
         await page.goto('https://www.tiktok.com/login')
-        console.log('Waiting for Fb Login selector...')
+        sendLog('Waiting for Fb Login selector...')
 
         const facebookButtonSelector = '.channel-item-wrapper-2gBWB+.channel-item-wrapper-2gBWB+.channel-item-wrapper-2gBWB .channel-name-2qzLW'
         await page.waitForSelector(facebookButtonSelector)
 
-        console.log('Waited !')
+        sendLog('Waited !')
         
         let hasLoggedIn = false
         await browser.on('targetcreated', async () => {
-            console.log('Target created')
+            sendLog('Target created')
             /** @type {import('puppeteer').Page} foundFacebookLogin */
             const facebookLoginPage = await findFacebookLogin(browser);
-            console.log('Fb login page found ? ' + (facebookLoginPage ? 'yes' : 'no'))
+            sendLog('Fb login page found ? ' + (facebookLoginPage ? 'yes' : 'no'))
             if (facebookLoginPage) {
-                console.log('Fb login page reloading...')
+                sendLog('Fb login page reloading...')
                 await facebookLoginPage.reload()
-                console.log('Fb login page reloaded. Loggin-in ...')
+                sendLog('Fb login page reloaded. Loggin-in ...')
                 try {
                     await facebookLoginPage.evaluate((facebookLogin, facebookPassword) => {
                         const body = document.body
@@ -62,55 +75,67 @@ function post(facebookLogin, facebookPassword, videoPath, legend, show = true) {
 
                     return
                 }
-                
-                console.log('Likely logged in !')
+
+                sendLog('Likely logged in !')
             } else {
                 /** @type {import('puppeteer').Page} loggedInPage */
                 const loggedInPage = await findLoggedInPage(browser);
-                console.log('TikTok page found ? ' + (loggedInPage ? 'yes' : 'no'))
+                sendLog('TikTok page found ? ' + (loggedInPage ? 'yes' : 'no'))
                 if (loggedInPage) {
                     if (! hasLoggedIn) {
                         hasLoggedIn = true
                         posterTimeout = false
-                        console.log('Goto upload page...')
+                        sendLog('Goto upload page...')
                         await page.goto('https://www.tiktok.com/upload/?lang=en')
 
-                        console.log('Went ! Waiting for selector...')
+                        sendLog('Went ! Waiting for selector...')
                         const videoInputSelector = 'input[name="upload-btn"]'
                         await page.waitForSelector(videoInputSelector)
                         const inputFile = await page.$(videoInputSelector)
-                        console.log('Waited ! Uploading file...')
+                        sendLog('Waited ! Uploading file...')
                         await inputFile.uploadFile(videoPath)
                         
-                        console.log('Uploaded ! Waiting for legends input...')
+                        sendLog('Uploaded ! Waiting for legends input...')
                         const legendInputSelector = '.DraftEditor-editorContainer>div'
                         await page.waitForSelector(legendInputSelector)
-                        console.log('Waited ! focusing input...')
+                        sendLog('Waited ! focusing input...')
                         await page.evaluate((legendInputSelector) => {
                             document.body.querySelector(legendInputSelector).focus()
                         }, legendInputSelector)
 
-                        console.log('Focused ! Typing legend...')
+                        sendLog('Focused ! Typing legend...')
                         await asyncForEach(Array.from(legend), async (char) => {
                             await sleep(1000)
                             await page.type(legendInputSelector, char)
                         })
 
                         await page.type(legendInputSelector, ' ')
-                        console.log('Typed !')
+                        sendLog('Typed !')
 
                         setTimeout(async () => {
-                            console.log('Waiting for post button...')
+                            sendLog('Waiting for post button...')
                             const postButtonSelector = 'button[type="button"]:nth-of-type(2)'
                             await page.waitForSelector(postButtonSelector)
-                            console.log('Waited ! Clicking post button...')
+                            sendLog('Waited ! Clicking post button...')
                             
                             await page.click(postButtonSelector)
-                            console.log('Clicked !')
+                            sendLog('Clicked !')
                             setTimeout(async () => {
+                                await page.waitForTimeout(10000)
+                                const goToProfileButton = '.modal-btn+.modal-btn'
+                                await page.waitForSelector(goToProfileButton)
+                                await page.click(goToProfileButton)
+
+                                const lastVideoSelector = '.video-feed-item-wrapper'
+                                await page.waitForSelector(lastVideoSelector)
+                                const tiktokUrl = await page.evaluate(lastVideoSelector => {
+                                    return document.querySelector(lastVideoSelector)?.href
+                                }, lastVideoSelector)
+                                sendLog(tiktokUrl)
+
+                                sendLog('Likely Posted !')
                                 await browser.close()
-                                console.log('Likely Posted !')
-                                resolve()
+                                resolve(tiktokUrl)
                             }, 3000)
                         }, 3000)
                     }
