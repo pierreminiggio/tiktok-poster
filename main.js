@@ -14,6 +14,7 @@ puppeteer.use(StealthPlugin())
  * @param {string} legend
  * @param {boolean} show
  * @param {LogFunction} sendLog
+ * @param {string|null} proxy
  * 
  * @returns {Promise<string>}
  */
@@ -23,17 +24,26 @@ function post(
     videoPath,
     legend,
     show = false,
-    sendLog = (toLog) => {}
+    sendLog = (toLog) => {},
+    proxy = null
 ) {
     const hasDebugFunction = ! isFunctionEmpty(sendLog)
     return new Promise(async (resolve, rejects) => {
         sendLog('Launch !')
+
+        const args = [
+            '--window-size=1000,800',
+            '--no-sandbox'
+        ]
+
+        if (proxy !== null) {
+            sendLog('Using proxy ' + proxy)
+            args.push('--proxy-server=' + proxy)
+        }
+ 
         const browser = await puppeteer.launch({
             headless: ! show,
-            args: [
-                '--window-size=1000,800',
-                '--no-sandbox'
-            ]
+            args
         })
         sendLog('Launched')
         let posterTimeout = true
