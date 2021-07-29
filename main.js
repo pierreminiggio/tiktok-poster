@@ -1,6 +1,6 @@
 import isFunctionEmpty from './isFunctionEmpty.js'
-import login from './login.js'
 import asyncForEach from '@pierreminiggio/async-foreach'
+import login from '@pierreminiggio/tiktok-login'
 
 /**
  * @typedef {Function} LogFunction
