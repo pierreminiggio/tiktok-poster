@@ -57,15 +57,68 @@ export default function post(
         sendLog('Waited ! Uploading file...')
         await inputFile.uploadFile(videoPath)
 
+        const videoFileNameSelector = '.file-text'
+
+        let doneUploading = false
+
+        const secondsWaitedBeforeAssumingItsUploaded = 20
+
+        const videoUploadTimeout = setTimeout(async () => {
+            sendLog('Waited ' + secondsWaitedBeforeAssumingItsUploaded + ' seconds, we assume it\'s now uploaded !')
+            doneUploading = true
+        }, secondsWaitedBeforeAssumingItsUploaded * 1000)
+
+        do {
+            const hasFinishedUploading = await page.evaluate(videoFileNameSelector => {
+                return !!(document.querySelector(videoFileNameSelector)?.innerText)
+            }, videoFileNameSelector)
+
+            if (hasFinishedUploading) {
+                doneUploading = true
+            }
+
+            sendLog('File ' + (doneUploading ? 'uploaded !' : 'uploading...'))
+
+            await page.waitForTimeout(1000)
+        } while (! doneUploading)
+
+        clearTimeout(videoUploadTimeout)
+
         sendLog('Uploaded ! Waiting for legends input...')
+
         const legendInputSelector = '.DraftEditor-editorContainer>div'
+
         await page.waitForSelector(legendInputSelector)
-        sendLog('Waited ! focusing input...')
+
+        sendLog('Waited !')
+
+        const currentLegendContent = await page.evaluate(legendInputSelector => {
+            return document.querySelector(legendInputSelector)?.innerText
+        }, legendInputSelector)
+
+        sendLog('Current legend : ' + currentLegendContent)
+
+        const currentLegendLength = currentLegendContent.length || 0
+
+        sendLog('Focusing input...')
         await page.evaluate((legendInputSelector) => {
             document.body.querySelector(legendInputSelector).focus()
         }, legendInputSelector)
 
-        sendLog('Focused ! Typing legend...')
+        sendLog('Focused !')
+
+        sendLog('Erasing ' + currentLegendLength + ' chars...')
+
+        await page.keyboard.press('End');
+
+        for (let letter = 0; letter < currentLegendLength; letter++) {
+            await page.keyboard.press('Backspace', {delay: 300});
+        }
+
+        sendLog('Erased !')
+
+        sendLog('Typing legend...')
+
         await asyncForEach(Array.from(legend), async (char) => {
             await page.waitForTimeout(1000)
             await page.type(legendInputSelector, char)
