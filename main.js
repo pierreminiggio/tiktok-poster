@@ -50,10 +50,14 @@ export default function post(
         sendLog('Goto upload page...')
         await page.goto('https://www.tiktok.com/upload/?lang=en')
 
-        sendLog('Went ! Waiting for selector...')
-        const videoInputSelector = 'input[name="upload-btn"]'
-        await page.waitForSelector(videoInputSelector)
-        const inputFile = await page.$(videoInputSelector)
+        sendLog('Went ! Waiting for Iframe...')
+        const iframeElement = await page.waitForSelector('iframe[src="https://www.tiktok.com/creator#/upload/?lang=en"]')
+        sendLog('Waited')
+        const frame = await iframeElement.contentFrame()
+
+        sendLog('Loaded ! Waiting for file input selector...')
+        const videoInputSelector = 'input[type="file"]'
+        const inputFile = await frame.waitForSelector(videoInputSelector)
         sendLog('Waited ! Uploading file...')
         await inputFile.uploadFile(videoPath)
 
@@ -69,7 +73,7 @@ export default function post(
         }, secondsWaitedBeforeAssumingItsUploaded * 1000)
 
         do {
-            const hasFinishedUploading = await page.evaluate(videoFileNameSelector => {
+            const hasFinishedUploading = await frame.evaluate(videoFileNameSelector => {
                 return !!(document.querySelector(videoFileNameSelector)?.innerText)
             }, videoFileNameSelector)
 
@@ -79,7 +83,7 @@ export default function post(
 
             sendLog('File ' + (doneUploading ? 'uploaded !' : 'uploading...'))
 
-            await page.waitForTimeout(1000)
+            await frame.waitForTimeout(1000)
         } while (! doneUploading)
 
         clearTimeout(videoUploadTimeout)
@@ -88,11 +92,11 @@ export default function post(
 
         const legendInputSelector = '.DraftEditor-editorContainer>div'
 
-        await page.waitForSelector(legendInputSelector)
+        await frame.waitForSelector(legendInputSelector)
 
         sendLog('Waited !')
 
-        const currentLegendContent = await page.evaluate(legendInputSelector => {
+        const currentLegendContent = await frame.evaluate(legendInputSelector => {
             return document.querySelector(legendInputSelector)?.innerText
         }, legendInputSelector)
 
@@ -101,7 +105,7 @@ export default function post(
         const currentLegendLength = currentLegendContent.length || 0
 
         sendLog('Focusing input...')
-        await page.evaluate((legendInputSelector) => {
+        await frame.evaluate((legendInputSelector) => {
             document.body.querySelector(legendInputSelector).focus()
         }, legendInputSelector)
 
@@ -109,10 +113,10 @@ export default function post(
 
         sendLog('Erasing ' + currentLegendLength + ' chars...')
 
-        await page.keyboard.press('End');
+        await frame.press('End');
 
         for (let letter = 0; letter < currentLegendLength; letter++) {
-            await page.keyboard.press('Backspace', {delay: 300});
+            await frame.press('Backspace', {delay: 300});
         }
 
         sendLog('Erased !')
@@ -120,14 +124,14 @@ export default function post(
         sendLog('Typing legend...')
 
         await asyncForEach(Array.from(legend), async (char) => {
-            await page.waitForTimeout(1000)
-            await page.type(legendInputSelector, char)
+            await frame.waitForTimeout(1000)
+            await frame.type(legendInputSelector, char)
         })
 
-        await page.type(legendInputSelector, ' ')
+        await frame.type(legendInputSelector, ' ')
         sendLog('Typed !')
 
-        await page.waitForTimeout(3000)
+        await frame.waitForTimeout(3000)
 
         sendLog('Checking if Cookies showed up...')
 
@@ -144,26 +148,23 @@ export default function post(
 
         sendLog('Waiting for post button...')
         const postButtonSelector = 'button[type="button"]:nth-of-type(2)'
-        await page.waitForSelector(postButtonSelector)
+        await frame.waitForSelector(postButtonSelector)
         sendLog('Waited ! Clicking post button...')
         if (hasDebugFunction) {
             await page.screenshot({path: '1before-clicking.png'})
         }
 
-
-        await page.click(postButtonSelector)
+        await frame.click(postButtonSelector)
         sendLog('Clicked !')
         if (hasDebugFunction) {
             await page.screenshot({path: '2after-clicking.png'})
         }
-
 
         await page.waitForTimeout(3000)
         await page.waitForTimeout(10000)
         if (hasDebugFunction) {
             await page.screenshot({path: '3after-clicking-after-wait.png'})
         }
-
 
         const goToProfileButton = '.modal-btn+.modal-btn'
         try {
