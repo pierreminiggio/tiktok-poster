@@ -105,18 +105,16 @@ export default function post(
         const currentLegendLength = currentLegendContent.length || 0
 
         sendLog('Focusing input...')
-        await frame.evaluate((legendInputSelector) => {
-            document.body.querySelector(legendInputSelector).focus()
-        }, legendInputSelector)
+        await frame.focus(legendInputSelector)
 
         sendLog('Focused !')
 
         sendLog('Erasing ' + currentLegendLength + ' chars...')
 
-        await frame.press('End');
+        await page.keyboard.press('End');
 
         for (let letter = 0; letter < currentLegendLength; letter++) {
-            await frame.press('Backspace', {delay: 300});
+            await page.keyboard.press('Backspace', {delay: 300});
         }
 
         sendLog('Erased !')
@@ -147,7 +145,7 @@ export default function post(
         }
 
         sendLog('Waiting for post button...')
-        const postButtonSelector = 'button[type="button"]:nth-of-type(2)'
+        const postButtonSelector = '.btn-post'
         await frame.waitForSelector(postButtonSelector)
         sendLog('Waited ! Clicking post button...')
         if (hasDebugFunction) {
@@ -168,22 +166,22 @@ export default function post(
 
         const goToProfileButton = '.modal-btn+.modal-btn'
         try {
-            await page.waitForSelector(goToProfileButton)
+            await frame.waitForSelector(goToProfileButton)
         } catch (error) {
             if (hasDebugFunction) {
                 await page.screenshot({path: '7fail.png'})
             }
 
-            sendLog(await page.evaluate(() => document.head.outerHTML + document.body.outerHTML))
+            sendLog(await frame.evaluate(() => document.head.outerHTML + document.body.outerHTML))
             await browser.close()
             rejects('Profile button not found after posting : ' + error.message)
 
             return
         }
 
-        await page.click(goToProfileButton)
+        await frame.click(goToProfileButton)
 
-        const lastVideoSelector = '.video-feed-item-wrapper'
+        const lastVideoSelector = '[data-e2e="user-post-item"] a'
         await page.waitForSelector(lastVideoSelector)
         const tiktokUrl = await page.evaluate(lastVideoSelector => {
             return document.querySelector(lastVideoSelector)?.href
